@@ -11,23 +11,37 @@ import torch.optim as optim
 import warnings
 import time 
 import math
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+
+parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=int, default=2)
+parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
+parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
+
+
+args = parser.parse_args()
+
+GhostType = args.ghost
+
 
 warnings.filterwarnings("ignore")
 plt.ion()   # interactive mode
 
 # Define the network type : Ghost or Usual
-GhostType = True
 is_read_data = True
 
 # Validation of GhostParameters or not
-isValidation = True
-ratio1 = 2
-ratio2 = 2
+isValidation = False
+
+if GhostType:
+    ratio1 = args.ratio1
+    ratio2 = args.ratio2
+    print("ratio : {} {}".format(ratio1,ratio2))
 
 # Store or not values from validation
 storeValidationResults = False
-
-
 
 
 # %% Load data
@@ -71,11 +85,13 @@ testloader = DataLoader(transformed_dataset_test, batch_size=1,
 # It's redefined for every new set of hyperparameters in the TRAINING PHASE
 
 if GhostType == False:
+    print("Classic ECLAD NET")
     net = Net()
     # Usual criterion for classification
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(net.parameters())
 elif not(isValidation):
+    print("Ghost ECLAD NET no validation")
     net = GhostNet(ratio1,ratio2)
     # Usual criterion for classification
     criterion = nn.CrossEntropyLoss()
@@ -106,9 +122,9 @@ train_accuracy_capture = [[]]
 # Store all accuracy capture for each set of parameters
 validation_accuracy_capture = [[]]
 
-for ratio1 in range(2,6):
+for _ratio1 in range(2,6):
 
-    for ratio2 in range(2,6):
+    for _ratio2 in range(2,6):
         
         loss_capture = []
         accuracy_capture = []
@@ -116,13 +132,13 @@ for ratio1 in range(2,6):
         if isValidation:
             accuracy_capture_v = []
             # Define the tested Model
-            net = GhostNet(ratio1,ratio2)
+            net = GhostNet(_ratio1,_ratio2)
             # Usual criterion for classification
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.Adam(net.parameters())
             tmp_valid = []
-            tmp_valid.append(ratio1)
-            tmp_valid.append(ratio2)
+            tmp_valid.append(_ratio1)
+            tmp_valid.append(_ratio2)
             
             
         tic = time.perf_counter()
@@ -280,7 +296,7 @@ if not(os.path.exists(torch_path)):
 if GhostType:
     torch.save(net.state_dict(), os.path.join(torch_path,"ghostNet_{}_{}.pt".format(ratio1,ratio2)))
 else :
-    torch.save(net.state_dict(), os.path.join(torch_path,"classicNet.pt"))
+    torch.save(net.state_dict(), os.path.join(torch_path,"ecladNet.pt"))
     
 print("Saving model finished")
 
@@ -306,25 +322,13 @@ print("TESTING")
 test_loss = 0.0
 correct, total = 0,0
 i = 0
-mse1 = 0.0
-mse2 = 0.0
-plot = False
-test = True
 
 tic = time.perf_counter()
 for i_batch, sample_batched in enumerate(testloader):
     inputs = sample_batched['image']
     labels = sample_batched['class_name']
     i += 1
-    if test == True:
-        # if i%10 == 0:
-        #     saliency(inputs,net)
-        # else:   
-        output, tmp_mse1, tmp_mse2 = net(inputs,test=test,plot=plot)   
-        mse1 += tmp_mse1
-        mse2 += tmp_mse2
-    else:
-        output = net(inputs,test=test)
+    output = net(inputs)
     #print(torch.argmax(output,axis = 1))
     for o,l in zip(torch.argmax(output,axis = 1),labels):
         if o == l:
@@ -332,12 +336,8 @@ for i_batch, sample_batched in enumerate(testloader):
         total += 1
     loss = criterion(output,labels)
     test_loss += loss.item() * inputs.size(0)
-    
-    
 toc = time.perf_counter()
 print(f"Tested in {toc-tic:0.4f} seconds")
 print(f'Testing Loss:{test_loss/len(testloader)}')
 print(f'Correct Predictions: {correct}/{total}')
-print(f'MSE Mean Conv 1 : {mse1/i}')
-print(f'MSE Mean Conv 2: {mse2/i}')
 
