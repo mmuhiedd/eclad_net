@@ -103,13 +103,18 @@ class GhostModule(nn.Module):
         ## Primary standard convolution + MP + ReLU
         self.primary_conv = nn.Sequential(
             nn.Conv2d(inp, init_channels, kernel_size, stride),
+            nn.BatchNorm2d(init_channels),
             nn.ReLU(inplace=True)
         )
         
     
         ### Secondary depthwise convolution + ReLU
         ##  dw_size//2 to keep same Height and Width for the new Features Maps
-        self.cheap_operation = nn.Conv2d(init_channels, new_channels, dw_size, 1, dw_size//2, groups=init_channels)
+        self.cheap_operation = nn.Sequential(
+            nn.Conv2d(init_channels, new_channels, dw_size, 1, dw_size//2, groups=init_channels),
+            nn.BatchNorm2d(new_channels),
+            nn.ReLU(inplace=True)
+        )
         # groups allow to perform convolution only once for each matrix 
 
     def forward(self, x):
@@ -138,10 +143,11 @@ class Net(nn.Module):
         # nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None)
         # Original images are 32x32
         self.conv1 = nn.Conv2d(3, 12, 5)
-
+        self.batchnorm1 = nn.BatchNorm2d(12)
         self.pool = nn.MaxPool2d(2, 2)
         
         self.conv2 = nn.Conv2d(12, 24, 5)
+        self.batchnorm2 = nn.BatchNorm2d(24)
         # Ghost Module
         #self.conv2 = GhostModule(6, 16, 5)
         self.pool2 = nn.MaxPool2d(2, 2)
