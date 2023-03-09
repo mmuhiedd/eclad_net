@@ -3,6 +3,7 @@ import argparse
 from classes import *
 from definitions import *
 from torch.utils.data import DataLoader
+import torch.profiler
 
 
 
@@ -33,19 +34,40 @@ testloader = DataLoader(transformed_dataset_test, batch_size=1,
                         shuffle=False, pin_memory=True)
 
 if isGhostNet:
-    netType = "GhostNet"
+    netType = "ghostNet_{}_{}".format(args.ratio1,args.ratio2)
     model = GhostNet(args.ratio1,args.ratio2)
-    model.load_state_dict(torch.load('runs/model/pytorch/ghostNet_{}_{}.pt'.format(args.ratio1,args.ratio2)))
 
 else:
     netType="ecladNet"
     model = Net()
-    model.load_state_dict(torch.load('runs/model/pytorch/ecladNet.pt'))
-
-model.eval()
-model.to(device)
-acc,time_inf = testModelPyTorch_InputToDevice_Once(model, testloader, class_list_test_t,device)
 
     
+model.load_state_dict(torch.load('runs/model/pytorch/{}.pt'.format(netType)))
+model.eval()
+model.to(device)
+
+# Profile path
+profile_path = "pytorchModels/profiles/"
+if not(os.path.exists(profile_path)):
+    os.makedirs(profile_path)
+
+with torch.no_grad():
+    
+    with torch.profiler.profile(
+            with_stack=True,
+            profile_memory=True,
+            with_flops=True,
+            with_modules=True,
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('pytorchModels/profiles/{}'.format(netType))
+        )as prof:
+        for _, sample_batched in enumerate(testloader):
+            inputs = sample_batched['image'].to(device)
+            tic = time.perf_counter()
+            output = model(inputs)
+            toc = time.perf_counter()
+            inf_time = toc-tic
+            print(f"Tested one element in {inf_time:0.4f} seconds\n")
+            break
+
 
 

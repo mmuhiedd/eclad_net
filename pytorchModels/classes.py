@@ -5,6 +5,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from definitions import MSE
+import torch.profiler
 
 
 class Logo_Dataset(Dataset):
@@ -160,25 +161,38 @@ class Net(nn.Module):
         # tic = time.perf_counter()
             
         ## Computeall in once if no conv plot required
-        xtemp1_ = F.relu(self.conv1(x))
-        x_temp1 = self.pool(xtemp1_)
+        with torch.profiler.record_function("CONV1"):
+            xtemp1_ = self.conv1(x)
+        with torch.profiler.record_function("BatchNorm1"):
+            xtemp1_ = self.batchnorm1(xtemp1_)
+        with torch.profiler.record_function("Relu1"):
+            xtemp1_ = F.relu(xtemp1_)
+        with torch.profiler.record_function("POOL1"):
+            x_temp1 = self.pool(xtemp1_)
         
         
         # Conv + ReLu + Pool (Second Layer)
+        with torch.profiler.record_function("CONV2"):
+            xtemp2_= self.conv2(x_temp1)
+        with torch.profiler.record_function("BatchNorm2"):
+            xtemp2_ = self.batchnorm2(xtemp2_)
+        with torch.profiler.record_function("Relu2"):
+            xtemp2_ = F.relu(xtemp2_)
+        with torch.profiler.record_function("POOL2"):
+            x_temp2 = self.pool(xtemp2_)
 
-        xtemp2_ = F.relu(self.conv2(x_temp1))
-        x_temp2 = self.pool2(xtemp2_)
              
              
         # Ghost Module
         # x = self.pool2(self.conv2.forward(x))
         # -1 re arrange array regarding the second parameter
         ## Error "shape '[-1, 400]' is invalid for input of size 4096"
-        x_ = x_temp2.view(-1, 24*5*5)
-        x_ = F.relu(self.fc1(x_))
+        with torch.profiler.record_function("FULLY CONNECTED"):
+            x_ = x_temp2.view(-1, 24*5*5)
+            x_ = F.relu(self.fc1(x_))
         # No relu for fc2 cause we use softMax to end up with probability for the class
-        x_ = self.fc2(x_)
-        x_ = self.sm1(x_)
+            x_ = self.fc2(x_)
+            x_ = self.sm1(x_)
         
 
         return x_
@@ -206,21 +220,27 @@ class GhostNet(nn.Module):
     def forward(self, x):
         # Conv + ReLu + Pool (First Layer)
         # tic = time.perf_counter()
-        x_temp1_ = self.ghost1(x)
-        x_temp1 = self.pool1(F.relu(x_temp1_))
+        with torch.profiler.record_function("CONVLAYER 1 "):
+            x_temp1 = self.ghost1(x)
+        with torch.profiler.record_function("POOL1"):
+            x_temp1 = self.pool1(x_temp1)
+
         # toc = time.perf_counter()
         # print(f"Trained in {toc-tic:0.4f} seconds")
         # Conv + ReLu + Pool (Second Layer)
-        x_temp2_= self.ghost2(x_temp1)
-        x_temp2 = self.pool1(F.relu(x_temp2_))
+        with torch.profiler.record_function("CONVLAYER 2"):
+            x_temp2= self.ghost2(x_temp1)
+        with torch.profiler.record_function("POOL2"):
+            x_temp2 = self.pool2(x_temp2)
         # x = self.pool2(self.conv2.forward(x))
         # -1 re arrange array regarding the second parameter
         ## Error "shape '[-1, 400]' is invalid for input of size 4096"
-        x_ = x_temp2.view(-1, 24*5*5)
-        x_ = F.relu(self.fc1(x_))
-        # No relu for fc2 cause we use softMax to end up with probability for the class
-        x_ = self.fc2(x_)
-        x_ = self.sm1(x_)
+        with torch.profiler.record_function("FULLYCONNECTED"):
+            x_ = x_temp2.view(-1, 24*5*5)
+            x_ = F.relu(self.fc1(x_))
+            # No relu for fc2 cause we use softMax to end up with probability for the class
+            x_ = self.fc2(x_)
+            x_ = self.sm1(x_)
         
         return x_
         

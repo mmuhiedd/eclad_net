@@ -1,6 +1,7 @@
 **/.DS_Store
-.vscode/**
-__pycache__/**
-cpp_app/**
+**/.vscode/**
+**/__pycache__/**
 validation/**
 runs/**
+pytorchModels/profiles/**
+
