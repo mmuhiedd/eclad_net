@@ -175,7 +175,7 @@ def MSE(convs, idx_images=0):
 
 def testModelPyTorch_InputToDevice_OneByOne(model,testset,labels_onehot,device):
 
-
+    model.to(device)
     acc = 0
     correct, total = 0.0, 0.0
     inf_time = 0
@@ -201,7 +201,7 @@ def testModelPyTorch_InputToDevice_OneByOne(model,testset,labels_onehot,device):
 
 def testModelPyTorch_InputToDevice_Once(model,testset,labels_onehot,device):
 
-
+    model.to(device)
     acc = 0
     correct, total = 0.0, 0.0
     inference_time = 0
