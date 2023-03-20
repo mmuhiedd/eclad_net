@@ -15,17 +15,20 @@ import os
 ## ARGS PARSING 
 parser = argparse.ArgumentParser(description='Process some integers.')
 
-parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=int, default=2)
-parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
+parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule. Default = 2', type=int, default=2)
+parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule. Default = 2', type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
+parser.add_argument('--batch',help='Batch Size used in ONNX. Default = 32', type=int, default=32)
+
 
 
 args = parser.parse_args()
 
 isGhostNet = args.ghost
+batch_size = args.batch
 
 # An example input you would normally provide to your model's forward() method.
-dummy_input = torch.rand(1, 3, 32, 32)
+dummy_input = torch.rand(batch_size, 3, 32, 32)
 
 onnx_path = "runs/model/onnx"
 if not(os.path.exists(onnx_path)):
