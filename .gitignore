@@ -2,6 +2,6 @@
 **/.vscode/**
 **/__pycache__/**
 validation/**
-runs/**
+runs/model/pytorch/**
 pytorchModels/profiles/**
 
