@@ -30,8 +30,8 @@ class_list_test_t = onehotencoding_class(class_list_test_t)
 
 
 transformed_dataset_test = Logo_Dataset(img_list_test, class_list_test_t  , transform = transforms.Compose([Rescale(32), ToTensor()]))
-testloader = DataLoader(transformed_dataset_test, batch_size=1,
-                        shuffle=False, pin_memory=True)
+testloader = DataLoader(transformed_dataset_test, batch_size=32,
+                        shuffle=True, pin_memory=True)
 
 if isGhostNet:
     netType = "ghostNet_{}_{}".format(args.ratio1,args.ratio2)
@@ -66,7 +66,8 @@ with torch.no_grad():
             output = model(inputs)
             toc = time.perf_counter()
             inf_time = toc-tic
-            print(f"Tested one element in {inf_time:0.4f} seconds\n")
+            nb_inputs = torch.numel(sample_batched["class_name"])
+            print(f"Tested {nb_inputs} element in {inf_time:0.4f} seconds\n")
             break
 
 

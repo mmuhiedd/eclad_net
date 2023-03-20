@@ -199,39 +199,37 @@ def testModelPyTorch_InputToDevice_OneByOne(model,testset,labels_onehot,device):
     print("Accuracy : {}  ({}/{})".format(acc,correct,total))
     return acc,inf_time   
 
-def testModelPyTorch_InputToDevice_Once(model,testset,labels_onehot,device):
 
-    model.to(device)
+def testModelPyTorch_InputToDevice_Once(model,testset,device):
+
+
     acc = 0
     correct, total = 0.0, 0.0
     inference_time = 0
-    outputs = []
-    inputs = []
+
+
+    print(next(model.parameters()).is_cuda)
     with torch.no_grad():
-
-# Transfer data to device
-        toDevice_tic = time.perf_counter()
         for _, sample_batched in enumerate(testset):
-            inputs.append(sample_batched['image'].to(device))
-        toDevice_toc = time.perf_counter()
-        toDevice_inf_time = toDevice_toc-toDevice_tic
-        print(f"Inputs transfered to model in {toDevice_inf_time:0.4f} seconds\n")
+# Transfer batch data to gpu
+          local_inputs = sample_batched['image'].to(device)
+          local_labels = sample_batched['class_name'].to(device)
 
+# Perform inference on the batch
+          inference_tic = time.perf_counter()
+          outputs = model(local_inputs)
+          inference_toc = time.perf_counter()
+          inference_time += inference_toc-inference_tic
 
-# Perform inference
-        inference_tic = time.perf_counter()
-        for input in inputs:
-            outputs.append(model(input))
-        inference_toc = time.perf_counter()
-        inference_time = inference_toc-inference_tic
-    print(f"Tested all test set in {inference_time:0.4f} seconds\n")
-    
-    #Compute accuracy
-    for cur_pred,label in zip(outputs,labels_onehot):
-        cur_max_pred = torch.argmax(cur_pred,axis=1)
-        if cur_max_pred.item() == label:
-            correct += 1
-        total +=1
+#Compute accuracy on the batch
+          for cur_pred,label in zip(outputs,local_labels):
+            cur_max_pred = torch.argmax(cur_pred)
+            if cur_max_pred.item() == label:
+              correct += 1
+            total +=1
+
+# Global results
     acc = correct/total
+    print(f"Tested all test set in {inference_time:0.4f} seconds\n")
     print("Accuracy : {}  ({}/{})".format(acc,correct,total))
-    return acc,inference_time   
+    return acc,inference_time  

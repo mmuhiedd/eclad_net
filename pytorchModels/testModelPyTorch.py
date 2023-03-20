@@ -28,23 +28,25 @@ img_list_test, class_list_test_t = read_images(train=False)
 class_list_test_t = onehotencoding_class(class_list_test_t)
 
 
-transformed_dataset_test = Logo_Dataset(img_list_test, class_list_test_t  , transform = transforms.Compose([Rescale(32), ToTensor()]))
-testloader = DataLoader(transformed_dataset_test, batch_size=1,
-                        shuffle=False, pin_memory=True)
+transformed_dataset_test = Logo_Dataset(img_list_test, class_list_test_t,
+                                         transform = transforms.Compose([Rescale(32), ToTensor()]))
+testloader = DataLoader(transformed_dataset_test, batch_size=32,
+                        shuffle=True, pin_memory=True)
 
 if isGhostNet:
     netType = "GhostNet"
     model = GhostNet(args.ratio1,args.ratio2)
-    model.load_state_dict(torch.load('runs/model/pytorch/ghostNet_{}_{}.pt'.format(args.ratio1,args.ratio2)))
+    model.load_state_dict(torch.load('runs/model/pytorch/ghostNet_{}_{}.pt'.format(args.ratio1,args.ratio2),map_location=device))
 
 else:
     netType="ecladNet"
     model = Net()
-    model.load_state_dict(torch.load('runs/model/pytorch/ecladNet.pt'))
+    model.load_state_dict(torch.load('runs/model/pytorch/ecladNet.pt',map_location=device))
 
-model.eval()
+
 model.to(device)
-acc,time_inf = testModelPyTorch_InputToDevice_Once(model, testloader, class_list_test_t,device)
+model.eval()
+acc,time_inf = testModelPyTorch_InputToDevice_Once(model, testloader,device)
 
     
 
