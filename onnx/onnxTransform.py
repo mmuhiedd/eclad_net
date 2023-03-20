@@ -1,7 +1,11 @@
 import torch
 import argparse
+import sys
+import os
+sys.path.append("{cur_dir}/../pytorchModels/".format(cur_dir=os.path.dirname(os.path.abspath(__file__))))
 from classes import GhostNet,Net
 from definitions import *
+import os
 
 
 
