@@ -325,4 +325,4 @@ if isValidation:
 print("TESTING") 
 
 
-acc,time_inf = testModelPyTorch_InputToDevice_Once(net, testloader, class_list_test,device)
+acc,time_inf = testModelPyTorch_InputToDevice_Once(net, testloader,device)
