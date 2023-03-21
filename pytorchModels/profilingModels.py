@@ -60,15 +60,12 @@ with torch.no_grad():
             with_modules=True,
             on_trace_ready=torch.profiler.tensorboard_trace_handler('pytorchModels/profiles/{}'.format(netType))
         )as prof:
-        for _, sample_batched in enumerate(testloader):
+        for i, sample_batched in enumerate(testloader):
             inputs = sample_batched['image'].to(device)
-            tic = time.perf_counter()
             output = model(inputs)
-            toc = time.perf_counter()
-            inf_time = toc-tic
-            nb_inputs = torch.numel(sample_batched["class_name"])
-            print(f"Tested {nb_inputs} element in {inf_time:0.4f} seconds\n")
-            break
+            # Check on 2 batch
+            if i == 1 :
+                break
 
 
 
