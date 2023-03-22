@@ -29,6 +29,10 @@ GhostType = args.ghost
 warnings.filterwarnings("ignore")
 plt.ion()   # interactive mode
 
+# SET DEVICE TO GPU IF AVAILABLE
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 # Define the network type : Ghost or Usual
 is_read_data = True
 
@@ -319,25 +323,6 @@ if isValidation:
     quit()
     
 print("TESTING") 
-test_loss = 0.0
-correct, total = 0,0
-i = 0
 
-tic = time.perf_counter()
-for i_batch, sample_batched in enumerate(testloader):
-    inputs = sample_batched['image']
-    labels = sample_batched['class_name']
-    i += 1
-    output = net(inputs)
-    #print(torch.argmax(output,axis = 1))
-    for o,l in zip(torch.argmax(output,axis = 1),labels):
-        if o == l:
-            correct += 1
-        total += 1
-    loss = criterion(output,labels)
-    test_loss += loss.item() * inputs.size(0)
-toc = time.perf_counter()
-print(f"Tested in {toc-tic:0.4f} seconds")
-print(f'Testing Loss:{test_loss/len(testloader)}')
-print(f'Correct Predictions: {correct}/{total}')
 
+acc,time_inf = testModelPyTorch_InputToDevice_Once(net, testloader,device)
