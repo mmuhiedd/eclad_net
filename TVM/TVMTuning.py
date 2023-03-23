@@ -1,10 +1,10 @@
 import sys
-#from tvm.driver import tvmc
-#import tvm
+from tvm.driver import tvmc
+import tvm
 import argparse
 import os
 import onnx
-#from tvm.contrib import graph_executor
+from tvm.contrib import graph_executor
 import numpy as np
 from TVMdefinitions import load_batch_image
 
