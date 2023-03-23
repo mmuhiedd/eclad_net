@@ -22,7 +22,6 @@ isGhostNet = args.ghost
 #### Load TestSet
 # Shape of one raw images : [3,30,30]
 # Shape required by the model : [32,3,32,32]
-
 images_arr, labels_arr = load_batch_image()
 
 #### Load the ONNX model
@@ -37,22 +36,21 @@ input_name = "input"
 print(images_arr.shape)
 shape_dict = {input_name: images_arr.shape}
 
-
-
-
-target_str = "cuda -arch=sm_75"
-
-
 mod, params = tvm.relay.frontend.from_onnx(onnx_model)
 
 with tvm.transform.PassContext(opt_level=3):
-  lib = tvm.relay.build(mod, target=target_str, params=params)
+  lib = tvm.relay.build(mod, target=target, params=params)
 
 
-dev = tvm.device(str(target_str), 0)
+device = tvm.device(str(target), 0)
+print(lib["default"](device))
 
-module = graph_executor.GraphModule(lib["default"](dev))
+module = graph_executor.GraphModule(lib["default"](device))
 
-#cuda_target = tvm.target.cuda(arch=)
-#print(type(cuda_target))
-#package = tvmc.compile(model, target=target_str)
+
+### Execute on TVM Runtime 
+dtype = "float32"
+module.set_input(input_name, images_arr)
+module.run()
+output_shape = (32, 2)
+tvm_output = module.get_output(0, tvm.nd.empty(output_shape)).numpy()
