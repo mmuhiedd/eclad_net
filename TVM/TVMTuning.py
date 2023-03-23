@@ -81,7 +81,7 @@ Tuning !!
 tuning_path = "TVM/tuning/"
 if not(os.path.exists(tuning_path)):
     os.makedirs(tuning_path)
-tuning_file =os.path.join(tuning_path,"ghostEclad_{}_{}_tuning.json".format(args.ratio1,args.ratio2)) if isGhostNet else os.path.join(onnx_path,"ecladNet_tuning.json")
+tuning_file =os.path.join(tuning_path,"ghostEclad_{}_{}_tuning.json".format(args.ratio1,args.ratio2)) if isGhostNet else os.path.join(tuning_path,"ecladNet_tuning.json")
 
 
 number = 10
