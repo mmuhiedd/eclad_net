@@ -5,3 +5,4 @@ validation/**
 runs/model/pytorch/**
 pytorchModels/profiles/**
 
+TVM/tuning/*.json
