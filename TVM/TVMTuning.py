@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=int, default=2)
 parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
+parser.add_argument('--arch',help='arch targetted. Default is llvm',type=str, default="llvm")
 args = parser.parse_args()
 isGhostNet = args.ghost
 
@@ -34,9 +35,8 @@ onnx_model = onnx.load(onnx_file)
 
 
 #### Compile Model with Relay
-target = "llvm"
+target = args.arch
 input_name = "input"
-print(images_arr.shape)
 shape_dict = {input_name: images_arr.shape}
 
 mod, params = tvm.relay.frontend.from_onnx(onnx_model)
