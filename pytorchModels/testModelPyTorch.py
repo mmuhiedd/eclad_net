@@ -14,10 +14,11 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=int, default=2)
 parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
-
+parser.add_argument('--nb_batch',help='nb batch to test. Usefull to test inference on only one batch. If 0, all batchs are proceed',type=int, default=0)
 
 args = parser.parse_args()
 isGhostNet = args.ghost
+nb_batch = args.nb_batch
 
 # set device used :
 ## Use GPU if available
@@ -46,7 +47,9 @@ else:
 
 model.to(device)
 model.eval()
-acc,time_inf = testModelPyTorch_InputToDevice_Once(model, testloader,device)
+acc = testModelPyTorch_acc(model, testloader,device, nb_batch)
+metrics = testModelPyTorch_inferenceTime(model, testloader,device, nb_batch)
+print(metrics)
 
     
 

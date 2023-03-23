@@ -7,7 +7,7 @@ import pickle
 import torch 
 from torchvision import transforms
 import time
-
+import timeit
 
 # %%
 def read_images(train=False):
@@ -171,65 +171,60 @@ def MSE(convs, idx_images=0):
     return MSE
 
 
-
-
-def testModelPyTorch_InputToDevice_OneByOne(model,testset,labels_onehot,device):
-
-    model.to(device)
-    acc = 0
-    correct, total = 0.0, 0.0
-    inf_time = 0
-    outputs = []
-    with torch.no_grad():
-        tic = time.perf_counter()
-        for _, sample_batched in enumerate(testset):
-            inputs = sample_batched['image'].to(device)
-            outputs.append(model(inputs))
-        toc = time.perf_counter()
-        inf_time = toc-tic
-    print(f"Tested all test set in {toc-tic:0.4f} seconds\n")
-    
-    #print(torch.argmax(output,axis = 1))
-    for cur_pred,label in zip(outputs,labels_onehot):
-        cur_max_pred = torch.argmax(cur_pred,axis=1)
-        if cur_max_pred.item() == label:
-            correct += 1
-        total +=1
-    acc = correct/total
-    print("Accuracy : {}  ({}/{})".format(acc,correct,total))
-    return acc,inf_time   
-
-
-def testModelPyTorch_InputToDevice_Once(model,testset,device):
+def testModelPyTorch_acc(model,testset,device,nb_batch=0):
 
 
     acc = 0
     correct, total = 0.0, 0.0
-    inference_time = 0
 
-
-    print(next(model.parameters()).is_cuda)
     with torch.no_grad():
-        for _, sample_batched in enumerate(testset):
+        for i_batch, sample_batched in enumerate(testset):
 # Transfer batch data to gpu
-          local_inputs = sample_batched['image'].to(device)
-          local_labels = sample_batched['class_name'].to(device)
+            local_inputs = sample_batched['image'].to(device)
+            local_labels = sample_batched['class_name'].to(device)
 
-# Perform inference on the batch
-          inference_tic = time.perf_counter()
-          outputs = model(local_inputs)
-          inference_toc = time.perf_counter()
-          inference_time += inference_toc-inference_tic
-
-#Compute accuracy on the batch
-          for cur_pred,label in zip(outputs,local_labels):
-            cur_max_pred = torch.argmax(cur_pred)
-            if cur_max_pred.item() == label:
-              correct += 1
-            total +=1
+    # Perform inference on the batch
+            outputs = model(local_inputs)
+            
+    #Compute accuracy on the batch
+            for cur_pred,label in zip(outputs,local_labels):
+                cur_max_pred = torch.argmax(cur_pred)
+                if cur_max_pred.item() == label:
+                    correct += 1
+                total +=1
+        
 
 # Global results
     acc = correct/total
-    print(f"Tested all test set in {inference_time:0.4f} seconds\n")
     print("Accuracy : {}  ({}/{})".format(acc,correct,total))
-    return acc,inference_time  
+    return acc  
+
+
+
+
+def testModelPyTorch_inferenceTime(model,testset,device,nb_batch=0):
+
+
+    timing_number = 10
+    timing_repeat = 10
+    inf_time = np.zeros(10,)
+    with torch.no_grad():
+        for i_batch, sample_batched in enumerate(testset):
+            local_inputs = sample_batched['image'].to(device)
+            model(local_inputs)
+        
+            inf_time += (
+                np.array(timeit.Timer(lambda: model(local_inputs)).repeat(repeat=timing_repeat, number=timing_number))
+                * 1000
+                / timing_number
+            )
+            if  (nb_batch != 0) and (i_batch == nb_batch-1):
+                break
+    
+    metrics = {
+        "mean": np.mean(inf_time),
+        "median": np.median(inf_time),
+        "std": np.std(inf_time),
+    }
+    return metrics
+# Global results
