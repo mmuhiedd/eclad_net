@@ -1,0 +1,16 @@
+name: ecladbis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - torchvision
+  - onnxruntime
+  - scikit-image
+  - scipy
+  - pytorch
+  - scikit-learn
+  - tensorboard
+  - tvm-py
+  - xgboost
+  - matplotlib
