@@ -19,8 +19,11 @@ parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=
 parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
 parser.add_argument('--arch',help='arch targetted. Default is llvm',type=str, default="llvm")
+parser.add_argument('--no_tune',help='set to not tune. useful tuning already performed',action='store_true', required=False, default=False)
+
 args = parser.parse_args()
 isGhostNet = args.ghost
+isTuning = not(args.no_tune)
 
 
 #### Load TestSet
@@ -77,12 +80,13 @@ compute_acc(tvm_output,labels_arr)
 '''
 Tuning !! 
 '''
+
+print("\n\nTUNING\n\n")
 # tuning path path
 tuning_path = "TVM/tuning/"
 if not(os.path.exists(tuning_path)):
     os.makedirs(tuning_path)
 tuning_file =os.path.join(tuning_path,"ghostEclad_{}_{}_tuning.json".format(args.ratio1,args.ratio2)) if isGhostNet else os.path.join(tuning_path,"ecladNet_tuning.json")
-
 
 number = 10
 repeat = 1
@@ -112,15 +116,18 @@ tuning_option = {
 tasks = autotvm.task.extract_from_program(mod["main"], target=target, params=params)
 
 # Tune the extracted tasks sequentially.
-for i, task in enumerate(tasks):
-    prefix = "[Task %2d/%2d] " % (i + 1, len(tasks))
-    tuner_obj = XGBTuner(task, loss_type="rank")
-    tuner_obj.tune(
-        n_trial=min(tuning_option["trials"], len(task.config_space)),
-        early_stopping=tuning_option["early_stopping"],
-        measure_option=tuning_option["measure_option"],
-        callbacks=[
-            autotvm.callback.progress_bar(tuning_option["trials"], prefix=prefix),
-            autotvm.callback.log_to_file(tuning_option["tuning_records"]),
-        ],
-    )
+if isTuning:
+  print("Start TUNING\n")
+  for i, task in enumerate(tasks):
+      prefix = "[Task %2d/%2d] " % (i + 1, len(tasks))
+      tuner_obj = XGBTuner(task, loss_type="rank")
+      tuner_obj.tune(
+          n_trial=min(tuning_option["trials"], len(task.config_space)),
+          early_stopping=tuning_option["early_stopping"],
+          measure_option=tuning_option["measure_option"],
+          callbacks=[
+              autotvm.callback.progress_bar(tuning_option["trials"], prefix=prefix),
+              autotvm.callback.log_to_file(tuning_option["tuning_records"]),
+          ],
+      )
+  print("End TUNING\n")
