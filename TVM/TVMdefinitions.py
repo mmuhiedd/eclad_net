@@ -53,4 +53,4 @@ def compute_acc(preds,labels):
             
 
     acc = correct/total
-    print("Accuracy : {}  ({}/{})".format(acc,correct,total))
+    return acc, correct, total

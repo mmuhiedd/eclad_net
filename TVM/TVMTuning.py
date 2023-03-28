@@ -73,8 +73,8 @@ print(metrics)
 
 
 ## Accuracy score
-compute_acc(tvm_output,labels_arr)
-
+acc, correct, total = compute_acc(tvm_output,labels_arr)
+print("Accuracy : {}  ({}/{})".format(acc,correct,total))
 
 
 '''
@@ -131,3 +131,31 @@ if isTuning:
           ],
       )
   print("End TUNING\n")
+
+
+## Test tuned model
+with autotvm.apply_history_best(tuning_option["tuning_records"]):
+    with tvm.transform.PassContext(opt_level=3, config={}):
+        lib = tvm.relay.build(mod, target=target, params=params)
+
+dev = tvm.device(str(target), 0)
+tuned_module = graph_executor.GraphModule(lib["default"](dev))
+
+dtype = "float32"
+tuned_module.set_input(input_name, images_arr)
+tuned_module.run()
+output_shape = (32, 2)
+tvm_output = tuned_module.get_output(0, tvm.nd.empty(output_shape)).numpy()
+
+## Exec times of tuned model
+tuned_metrics = compute_inference_time(tuned_module)
+# time in ms
+print("untuned: ")
+print(metrics)
+print("\n tuned: ")
+print(tuned_metrics)
+## Accuracy score
+tuned_acc, _, _ = compute_acc(tvm_output,labels_arr)
+print("untuned :  Accuracy : {}  ({}/{})".format(acc,correct,total))
+print("Tuned :    Accuracy : {}  ({}/{})".format(tuned_acc,correct,total))
+
