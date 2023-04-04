@@ -1,8 +1,8 @@
 import sys
-from tvm.driver import tvmc
 import tvm
 import tvm.auto_scheduler as auto_scheduler
 from tvm.autotvm.tuner import XGBTuner
+import tvm.relay as relay
 from tvm import autotvm
 import argparse
 import os
@@ -26,6 +26,7 @@ isGhostNet = args.ghost
 isTuning = not(args.no_tune)
 
 
+
 #### Load TestSet
 # Shape of one raw images : [3,30,30]
 # Shape required by the model : [32,3,32,32]
@@ -42,10 +43,10 @@ target = args.arch
 input_name = "input"
 shape_dict = {input_name: images_arr.shape}
 
-mod, params = tvm.relay.frontend.from_onnx(onnx_model)
+mod, params = relay.frontend.from_onnx(onnx_model)
 
 with tvm.transform.PassContext(opt_level=3):
-  lib = tvm.relay.build(mod, target=target, params=params)
+  lib = relay.build(mod, target=target, params=params)
 
 
 device = tvm.device(str(target), 0)
