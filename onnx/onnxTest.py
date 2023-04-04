@@ -1,11 +1,13 @@
 import onnx
 import argparse
 import onnxruntime
+import sys
+import os
+sys.path.append("{cur_dir}/../pytorchModels/".format(cur_dir=os.path.dirname(os.path.abspath(__file__))))
 import definitions
 import numpy as np
 import torchvision.transforms as transforms
 import torch
-import os
 
 ##############
 ## ARGS PARSING 
