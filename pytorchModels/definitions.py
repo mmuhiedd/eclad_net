@@ -172,7 +172,16 @@ def MSE(convs, idx_images=0):
 
 
 def testModelPyTorch_acc(model,testset,device,nb_batch=0):
+    """Compute and print accuracy for `model` on the `testset`.
 
+    Args:
+        model (Model): model to analyze
+        testset (Dataloader): test set inclusing data and labels
+        device (device): arch targetted. CUDA or cpu
+        nb_batch (int, optional): Number of batch porcessed. Defaults to 0, meaning all the testet.
+    Returns:
+        float: accuracy
+    """
 
     acc = 0
     correct, total = 0.0, 0.0
@@ -192,6 +201,9 @@ def testModelPyTorch_acc(model,testset,device,nb_batch=0):
                 if cur_max_pred.item() == label:
                     correct += 1
                 total +=1
+            
+            if  (nb_batch != 0) and (i_batch == nb_batch-1):
+                break
         
 
 # Global results
@@ -203,14 +215,27 @@ def testModelPyTorch_acc(model,testset,device,nb_batch=0):
 
 
 def testModelPyTorch_inferenceTime(model,testset,device,nb_batch=0):
+    """Compute inference time metrics on `nb_batch` batch
+        if `device` is cuda, skip the first batch inference as it's a warm up (generate kernels)
 
+    Args:
+        model (Model): model to analyze
+        testset (Dataloader): test set inclusing data and labels
+        device (device): arch targetted. CUDA or cpu
+        nb_batch (int, optional): Number of batch porcessed. Defaults to 0, meaning all the testet.
+
+    Returns:
+        dict[str, floating]: inference metrics (mean, median and average)
+    """
 
     timing_number = 10
     timing_repeat = 10
     inf_time = np.zeros(10,)
     with torch.no_grad():
+        model.to(device)
         for i_batch, sample_batched in enumerate(testset):
             local_inputs = sample_batched['image'].to(device)
+            # Kernel initialization through first inference
             model(local_inputs)
         
             inf_time += (
@@ -226,5 +251,6 @@ def testModelPyTorch_inferenceTime(model,testset,device,nb_batch=0):
         "median": np.median(inf_time),
         "std": np.std(inf_time),
     }
+    print(metrics)
     return metrics
 # Global results
