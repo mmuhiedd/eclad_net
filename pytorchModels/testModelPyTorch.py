@@ -20,6 +20,8 @@ args = parser.parse_args()
 isGhostNet = args.ghost
 nb_batch = args.nb_batch
 
+batchNorm = False
+
 # set device used :
 ## Use GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,17 +41,22 @@ if isGhostNet:
     model = GhostNet(args.ratio1,args.ratio2)
     model.load_state_dict(torch.load('runs/model/pytorch/ghostNet_{}_{}.pt'.format(args.ratio1,args.ratio2),map_location=device))
 
-else:
+elif batchNorm:
     netType="ecladNet"
     model = Net()
     model.load_state_dict(torch.load('runs/model/pytorch/ecladNet.pt',map_location=device))
 
+else:
+    netType="EcladNet noBatch"
+    model = NetNoBatch()
+    model.load_state_dict(torch.load('runs/model/pytorch/ecladNet_noBatch.pt',map_location=device))
 
+
+print("\n %s \n" % netType)
 model.to(device)
 model.eval()
 acc = testModelPyTorch_acc(model, testloader,device, nb_batch)
 metrics = testModelPyTorch_inferenceTime(model, testloader,device, nb_batch)
-print(metrics)
 
     
 

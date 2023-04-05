@@ -250,3 +250,63 @@ class GhostNet(nn.Module):
         
         return x_
         
+
+class NetNoBatch(nn.Module):
+    def __init__(self):
+        super(NetNoBatch, self).__init__()
+        # nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', device=None, dtype=None)
+        # Original images are 32x32
+        self.conv1 = nn.Conv2d(3, 12, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        self.conv2 = nn.Conv2d(12, 24, 5)
+        # Ghost Module
+        #self.conv2 = GhostModule(6, 16, 5)
+        self.pool2 = nn.MaxPool2d(2, 2)
+
+        
+        ## Output dim of conv layer is 16(nb_channels)*5*5(remaining dim of pictures)
+        # Linear(in_features: int, out_features: int, bias: bool = True, device: Any | None = None, dtype: Any | None = None)
+        self.fc1 = nn.Linear(24*5*5, 32)
+        ## Res or Cap ? Reason for last dim of two
+        self.fc2 = nn.Linear(32, 2)
+        ## SoftMax 
+        self.sm1 = nn.Softmax(dim=1)
+    
+    ## x correspond to the image
+    def forward(self, x):
+        # Conv + ReLu + Pool (First Layer)
+        # tic = time.perf_counter()
+            
+        ## Computeall in once if no conv plot required
+        with torch.profiler.record_function("CONV1"):
+            xtemp1_ = self.conv1(x)
+        with torch.profiler.record_function("Relu1"):
+            xtemp1_ = F.relu(xtemp1_)
+        with torch.profiler.record_function("POOL1"):
+            x_temp1 = self.pool(xtemp1_)
+        
+        
+        # Conv + ReLu + Pool (Second Layer)
+        with torch.profiler.record_function("CONV2"):
+            xtemp2_= self.conv2(x_temp1)
+        with torch.profiler.record_function("Relu2"):
+            xtemp2_ = F.relu(xtemp2_)
+        with torch.profiler.record_function("POOL2"):
+            x_temp2 = self.pool(xtemp2_)
+
+             
+             
+        # Ghost Module
+        # x = self.pool2(self.conv2.forward(x))
+        # -1 re arrange array regarding the second parameter
+        ## Error "shape '[-1, 400]' is invalid for input of size 4096"
+        with torch.profiler.record_function("FULLY CONNECTED"):
+            x_ = x_temp2.view(-1, 24*5*5)
+            x_ = F.relu(self.fc1(x_))
+        # No relu for fc2 cause we use softMax to end up with probability for the class
+            x_ = self.fc2(x_)
+            x_ = self.sm1(x_)
+        
+
+        return x_
