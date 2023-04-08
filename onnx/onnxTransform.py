@@ -41,19 +41,19 @@ if isGhostNet:
     model.eval()
     torch_out = model(dummy_input)
     # Export to ONNX
-    torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ghostEclad_{}_{}.onnx".format(args.ratio1,args.ratio2)),
+    torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ghostEclad_{}_{}_b{}.onnx".format(args.ratio1,args.ratio2,batch_size)),
                        export_params=True,
                          input_names = ['input'])
     
 
 else:
-    netType="ClassicNet"
+    netType="ECLAD-Net"
     model = Net()
     model.load_state_dict(torch.load('runs/model/pytorch/ecladNet.pt'))
     model.eval()
     torch_out = model(dummy_input)
     # Export to ONNX
-    torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ecladNet.onnx"),
+    torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ecladNet_b%d.onnx" % batch_size),
                     export_params=True,
                     input_names = ['input'])
 
