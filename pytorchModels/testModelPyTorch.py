@@ -15,10 +15,12 @@ parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=
 parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
 parser.add_argument('--nb_batch',help='nb batch to test. Usefull to test inference on only one batch. If 0, all batchs are proceed',type=int, default=0)
+parser.add_argument('--batch_size',help='Batch Size used. Default = 32', type=int, default=32)
 
 args = parser.parse_args()
 isGhostNet = args.ghost
 nb_batch = args.nb_batch
+batch_size = args.batch_size
 
 batchNorm = False
 
@@ -33,7 +35,7 @@ class_list_test_t = onehotencoding_class(class_list_test_t)
 
 transformed_dataset_test = Logo_Dataset(img_list_test, class_list_test_t,
                                          transform = transforms.Compose([Rescale(32), ToTensor()]))
-testloader = DataLoader(transformed_dataset_test, batch_size=32,
+testloader = DataLoader(transformed_dataset_test, batch_size=batch_size,
                         shuffle=True, pin_memory=True)
 
 if isGhostNet:
