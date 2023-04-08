@@ -19,10 +19,12 @@ parser.add_argument('--ratio1',help='ratio of ghost for first ghostmodule',type=
 parser.add_argument('--ratio2',help='ratio of ghost for second ghostmodule',type=int, default=2)
 parser.add_argument('--ghost',help='process ghost net',action='store_true', required=False, default=False)
 parser.add_argument('--arch',help='arch targetted. Default is llvm',type=str, default="llvm")
+parser.add_argument('--batch',help='Batch Size used. Default = 32', type=int, default=32)
 parser.add_argument('--no_tune',help='set to not tune. useful tuning already performed',action='store_true', required=False, default=False)
 
 args = parser.parse_args()
 isGhostNet = args.ghost
+batch_size = args.batch
 isTuning = not(args.no_tune)
 
 
@@ -32,12 +34,12 @@ printTask = False
 
 #### Load TestSet
 # Shape of one raw images : [3,30,30]
-# Shape required by the model : [32,3,32,32]
-images_arr, labels_arr = load_batch_image()
+# Shape required by the model : [batch_size,3,32,32]
+images_arr, labels_arr = load_batch_image(batch_size)
 
 #### Load the ONNX model
 onnx_path = "runs/model/onnx"
-onnx_file = os.path.join(onnx_path,"ghostEclad_{}_{}.onnx".format(args.ratio1,args.ratio2)) if isGhostNet else os.path.join(onnx_path,"ecladNet.onnx")
+onnx_file = os.path.join(onnx_path,"ghostEclad_{}_{}_b{}.onnx".format(args.ratio1,args.ratio2,batch_size)) if isGhostNet else os.path.join(onnx_path,"ecladNet_b%d.onnx"%batch_size)
 onnx_model = onnx.load(onnx_file)
 
 
@@ -72,7 +74,7 @@ module = graph_executor.GraphModule(lib["default"](device))
 dtype = "float32"
 module.set_input(input_name, images_arr)
 module.run()
-output_shape = (32, 2)
+output_shape = (batch_size, 2)
 tvm_output = module.get_output(0, tvm.nd.empty(output_shape)).numpy()
 
 
