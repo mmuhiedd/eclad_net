@@ -43,7 +43,8 @@ if isGhostNet:
     # Export to ONNX
     torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ghostEclad_{}_{}_b{}.onnx".format(args.ratio1,args.ratio2,batch_size)),
                        export_params=True,
-                         input_names = ['input'])
+                         input_names = ['input'],
+                         output_names = ['output'])
     
 
 else:
@@ -55,7 +56,8 @@ else:
     # Export to ONNX
     torch.onnx.export(model, dummy_input, os.path.join(onnx_path,"ecladNet_b%d.onnx" % batch_size),
                     export_params=True,
-                    input_names = ['input'])
+                    input_names = ['input'],
+                     output_names = ['output'])
 
 
 
